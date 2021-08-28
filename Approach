@@ -1,0 +1,5 @@
+Approach to solve the given question:
+Rest assured is used because it will save lot of bolierplate code need for the Http connection set up.
+Jackson is used because Object mapper is faster than any other traditional method to compare the json file hence it is imported.
+Buffered reader is used because it id faster to raed  any file line by line.
+Then all the above libraries are imported to POM .xml to acheive the result respectively.
