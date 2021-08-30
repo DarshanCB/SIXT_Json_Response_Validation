@@ -3,29 +3,23 @@ package com.sixt.httpcomparator;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class APIResponseComparatorTest {
 
     APIResponseComparator utils = new APIResponseComparator();
 
     @Test
-    public void testresponse() throws IOException
-    {
-        long starttime = System.currentTimeMillis();
-        utils.InputFilePath("/Applications/Coding Challenge/File1.txt", "/Applications/Coding Challenge/File2.txt");
-        long stoptime = System.currentTimeMillis();
-        System.out.println("Time taken by test response 1   " + (stoptime - starttime));
-    }
-
-    @Test
-    public void testresponse2() throws IOException
-    {
-        long starttime = System.currentTimeMillis();
-        utils.InputFilePathAsyc("/Applications/Coding Challenge/File1.txt", "/Applications/Coding Challenge/File2.txt");
-        long stoptime = System.currentTimeMillis();
-        System.out.println("Time taken by test response 2    "  + (stoptime-starttime));
+    public void testResponse() {
+        try {
+            long starttime = System.currentTimeMillis();
+            utils.inputFilePathAsyc("/Applications/Coding Challenge/File1.txt", "/Applications/Coding Challenge/File2.txt");
+            long stoptime = System.currentTimeMillis();
+            System.out.println("Time taken for comparison   ::"  + (stoptime-starttime));
+        }
+        catch (IllegalArgumentException e)
+        {
+            e.printStackTrace();
+        }
     }
 
 }
