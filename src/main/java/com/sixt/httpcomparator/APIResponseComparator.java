@@ -1,12 +1,18 @@
 package com.sixt.httpcomparator;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.asynchttpclient.*;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,8 +24,6 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
-
-import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 
 
@@ -125,7 +129,7 @@ public class APIResponseComparator {
             assert buff2 != null;
             buff2.close();
         }
-        
+
 
     }
 
@@ -232,36 +236,56 @@ public class APIResponseComparator {
 
     public org.asynchttpclient.Response AsynchronousFunction(String URL) throws ExecutionException, InterruptedException, JsonProcessingException
     {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-        Runnable service1 = new Runnable() {
-            @Override
-            public void run() {
-                AsyncHttpClient client = Dsl.asyncHttpClient();
-                //org.asynchttpclient.Response response = client.prepareGet(URL).execute().get();
-                Future<org.asynchttpclient.Response> f = client.prepareGet(URL).execute();
-                org.asynchttpclient.Response resp = null;
-                try {
-                    resp = f.get();
-                    return (org.asynchttpclient.Response) resp;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }
-
-
         AsyncHttpClient client = Dsl.asyncHttpClient();
         //org.asynchttpclient.Response response = client.prepareGet(URL).execute().get();
         Future<org.asynchttpclient.Response> f = client.prepareGet(URL).execute();
         org.asynchttpclient.Response resp = f.get();
         return (org.asynchttpclient.Response) resp;
 
+    }
 
+    public void InputFilePath5(String file1, String file2) throws IOException {
+        BufferedReader buff1 = null;
+        BufferedReader buff2 = null;
+        String line1 = null;
+        String line2 = null;
+
+        try {
+            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8));
+            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8));
+            while ((line1 = buff1.readLine()) != null && (line2 = buff2.readLine()) != null) {
+                CloseableHttpResponse resp1 = httprequest(line1);
+                CloseableHttpResponse resp2 = httprequest(line2);
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode1 = objectMapper.readTree(resp1.getEntity().getContent());
+                JsonNode jsonNode2 = objectMapper.readTree(resp2.getEntity().getContent());
+                if (jsonNode1.equals(jsonNode2)) {
+                    System.out.println(line1 + "  equals  " + line2);
+                } else {
+                    System.out.println(line1 + "  not equals  " + line2);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            assert buff1 != null;
+            buff1.close();
+            assert buff2 != null;
+            buff2.close();
+        }
     }
 
 
+    public CloseableHttpResponse httprequest(String URL) throws IOException
+    {
+        HttpClientConnectionManager poolingConnManager
+                = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient client
+                = HttpClients.custom().setConnectionManager(poolingConnManager)
+                .build();
+        CloseableHttpResponse resp = client.execute(new HttpGet(URL));
+        return resp;
+
+    }
 }
