@@ -13,16 +13,18 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.asynchttpclient.*;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+
+import java.awt.event.InputEvent;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.*;
 import static io.restassured.RestAssured.given;
 
@@ -32,7 +34,7 @@ public class APIResponseComparator {
 
     HttpClient client = HttpClient.newHttpClient();
 
-    public void InputFilePathAsyc(String file1, String file2) throws IOException {
+    public void InputFilePathAsyc(String file1, String file2)  {
         BufferedReader buff1 = null;
         BufferedReader buff2 = null;
 
@@ -41,16 +43,15 @@ public class APIResponseComparator {
             String api1 = null;
             String api2 = null;
 
-            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8));
-            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8));
-
+            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8), 1000 * 8192);
+            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8), 1000 * 8192);
             while ((api1 = buff1.readLine()) != null && (api2 = buff2.readLine()) != null)
             {
                 apiComparator(api1, api2);
             }
 
         }
-        catch (Exception e) {
+        catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
@@ -58,14 +59,14 @@ public class APIResponseComparator {
 
     private void apiComparator(String api1, String api2) throws InterruptedException, ExecutionException, IOException {
 
-        CompletableFuture<String> file1API = gethttpasync(api1);
-        CompletableFuture<String> file2API = gethttpasync(api2);
+        CompletableFuture<InputStream> file1API = gethttpasync(api1);
+        CompletableFuture<InputStream> file2API = gethttpasync(api2);
 
-        String resp1 = file1API.get();
-        String resp2 = file2API.get();
+        InputStream resp1 = file1API.get();
+        InputStream resp2 = file2API.get();
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode1 = objectMapper.readTree(resp1.getBytes(StandardCharsets.UTF_8));
-        JsonNode jsonNode2 = objectMapper.readTree(resp2.getBytes(StandardCharsets.UTF_8));
+        JsonNode jsonNode1 = objectMapper.readTree(resp1);
+        JsonNode jsonNode2 = objectMapper.readTree(resp2);
 
         if (jsonNode1.equals(jsonNode2))
         {
@@ -213,22 +214,13 @@ public class APIResponseComparator {
 
     }
 
-    public CompletableFuture<String> gethttpasync(String uri) {
+    public CompletableFuture<InputStream> gethttpasync(String uri) {
 
-        HttpRequest request = null;
+        HttpRequest request = HttpRequest.newBuilder().
+                uri(URI.create(uri))
+                .build();
 
-        try
-        {
-            request = HttpRequest.newBuilder().uri(URI.create(uri))
-                    .build();
-
-        }
-        catch (IllegalArgumentException e)
-        {
-            e.printStackTrace();
-        }
-
-        return client.sendAsync(request, BodyHandlers.ofString())
+        return client.sendAsync(request, BodyHandlers.ofInputStream())
                 .thenApply(HttpResponse::body);
 
     }
