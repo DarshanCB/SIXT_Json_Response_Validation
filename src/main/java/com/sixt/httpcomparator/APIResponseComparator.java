@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.asynchttpclient.*;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -15,15 +16,17 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 
+
 public class APIResponseComparator {
+
+
+    HttpClient client = HttpClient.newHttpClient();
 
     public void InputFilePathAsyc(String file1, String file2) throws IOException {
         BufferedReader buff1 = null;
@@ -116,6 +119,48 @@ public class APIResponseComparator {
             e.printStackTrace();
 
         }
+        finally {
+            assert buff1 != null;
+            buff1.close();
+            assert buff2 != null;
+            buff2.close();
+        }
+        
+
+    }
+
+    public void InputFilePath4(String file1, String file2) throws IOException {
+        BufferedReader buff1 = null;
+        BufferedReader buff2 = null;
+        String line1 = null;
+        String line2 = null;
+
+        try {
+            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8));
+            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8));
+            while ((line1 = buff1.readLine()) != null && (line2 = buff2.readLine()) != null) {
+                org.asynchttpclient.Response resp1 = AsynchronousFunction(line1);
+                org.asynchttpclient.Response resp2 = AsynchronousFunction(line2);
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode1 = objectMapper.readTree(resp1.getResponseBody());
+                JsonNode jsonNode2 = objectMapper.readTree(resp2.getResponseBody());
+                if (jsonNode1.equals(jsonNode2)) {
+                    System.out.println(line1 + "  equals  " + line2);
+                } else {
+                    System.out.println(line1 + "  not equals  " + line2);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        finally {
+            assert buff1 != null;
+            buff1.close();
+            assert buff2 != null;
+            buff2.close();
+        }
+
 
     }
 
@@ -144,25 +189,78 @@ public class APIResponseComparator {
     }
 
     public String gethttp(String uri) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
 
-        HttpResponse<String> response =
-                client.send(request, BodyHandlers.ofString());
+        HttpResponse<String> response = null;
 
+        try
+        {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(uri)).build();
+
+            response = client.send(request, BodyHandlers.ofString());
+
+        }
+        catch (IllegalArgumentException e)
+        {
+            e.printStackTrace();
+        }
+        assert response != null;
         return response.body();
+
     }
 
     public CompletableFuture<String> gethttpasync(String uri) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
+
+        HttpRequest request = null;
+
+        try
+        {
+            request = HttpRequest.newBuilder().uri(URI.create(uri))
+                    .build();
+
+        }
+        catch (IllegalArgumentException e)
+        {
+            e.printStackTrace();
+        }
 
         return client.sendAsync(request, BodyHandlers.ofString())
                 .thenApply(HttpResponse::body);
+
+    }
+
+
+    public org.asynchttpclient.Response AsynchronousFunction(String URL) throws ExecutionException, InterruptedException, JsonProcessingException
+    {
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        Runnable service1 = new Runnable() {
+            @Override
+            public void run() {
+                AsyncHttpClient client = Dsl.asyncHttpClient();
+                //org.asynchttpclient.Response response = client.prepareGet(URL).execute().get();
+                Future<org.asynchttpclient.Response> f = client.prepareGet(URL).execute();
+                org.asynchttpclient.Response resp = null;
+                try {
+                    resp = f.get();
+                    return (org.asynchttpclient.Response) resp;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+
+        AsyncHttpClient client = Dsl.asyncHttpClient();
+        //org.asynchttpclient.Response response = client.prepareGet(URL).execute().get();
+        Future<org.asynchttpclient.Response> f = client.prepareGet(URL).execute();
+        org.asynchttpclient.Response resp = f.get();
+        return (org.asynchttpclient.Response) resp;
+
+
     }
 
 

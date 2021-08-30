@@ -34,4 +34,15 @@ public class APIResponseComparatorTest {
         long stoptime = System.currentTimeMillis();
         System.out.println("Time taken by test response 2    "  + (stoptime-starttime));
     }
+
+    @Test
+    public void testresponse4() throws IOException
+    {
+        long starttime = System.currentTimeMillis();
+        utils.InputFilePath4("/Applications/Coding Challenge/File1.txt", "/Applications/Coding Challenge/File2.txt");
+        long stoptime = System.currentTimeMillis();
+        System.out.println("Time taken by test response 2    "  + (stoptime-starttime));
+    }
+
+
 }
