@@ -1,13 +1,9 @@
 package com.sixt.httpcomparator;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import java.io.*;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
+import java.net.*;
+import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 
@@ -15,7 +11,7 @@ public class APIResponseComparator {
 
     HttpClient client = HttpClient.newHttpClient();
 
-    public void inputFilePathAsyc(String file1, String file2)  {
+    public void inputResponseComparator(String file1, String file2) throws IOException {
         BufferedReader buff1 = null;
         BufferedReader buff2 = null;
 
@@ -24,8 +20,8 @@ public class APIResponseComparator {
             String api1 = null;
             String api2 = null;
 
-            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8), 1000 * 9999);
-            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8), 1000 * 9999);
+            buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8), 1000 * 8816);
+            buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8), 1000 * 8816);
 
             while ((api1 = buff1.readLine()) != null && (api2 = buff2.readLine()) != null)
             {
@@ -36,13 +32,15 @@ public class APIResponseComparator {
         catch (IOException | InterruptedException | ExecutionException e)
         {
             e.printStackTrace();
+            assert buff1 != null;
+            buff1.close();
+            assert buff2 != null;
+            buff2.close();
         }
 
     }
 
     private void apiComparator(String api1, String api2) throws InterruptedException, ExecutionException, IOException
-    {
-    try
     {
         CompletableFuture<InputStream> file1API = getHttpAsync(api1);
         CompletableFuture<InputStream> file2API = getHttpAsync(api2);
@@ -50,6 +48,8 @@ public class APIResponseComparator {
         InputStream resp1 = file1API.get();
         InputStream resp2 = file2API.get();
 
+    try
+    {
         ObjectMapper objectMapper = new ObjectMapper();
 
         JsonNode jsonNode1 = objectMapper.readTree(resp1);
@@ -63,8 +63,12 @@ public class APIResponseComparator {
             System.out.println(api1 + "  not equals  " + api2);
         }
 
-    } catch (InterruptedException | ExecutionException | IOException e) {
+    }
+    catch (IOException e)
+    {
         e.printStackTrace();
+        resp1.close();
+        resp2.close();
     }
 
 
@@ -84,7 +88,7 @@ public class APIResponseComparator {
             e.printStackTrace();
         }
 
-        return client.sendAsync(request, BodyHandlers.ofInputStream())
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
                 .thenApply(HttpResponse::body);
 
     }
