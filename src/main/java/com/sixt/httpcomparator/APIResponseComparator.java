@@ -1,6 +1,7 @@
 package com.sixt.httpcomparator;
 
 import com.fasterxml.jackson.databind.*;
+
 import java.io.*;
 import java.net.*;
 import java.net.http.*;
@@ -23,15 +24,13 @@ public class APIResponseComparator {
             buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8), 1000 * 8816);
             buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8), 1000 * 8816);
 
-            while ((api1 = buff1.readLine()) != null && (api2 = buff2.readLine()) != null)
-            {
+            while ((api1 = buff1.readLine()) !=null && (api2 = buff2.readLine()) !=null){
                 apiComparator(api1, api2);
             }
 
-        }
-        catch (IOException | InterruptedException | ExecutionException e)
-        {
+        } catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
+        } finally {
             assert buff1 != null;
             buff1.close();
             assert buff2 != null;
@@ -40,36 +39,31 @@ public class APIResponseComparator {
 
     }
 
-    private void apiComparator(String api1, String api2) throws InterruptedException, ExecutionException, IOException
-    {
+    private void apiComparator(String api1, String api2) throws InterruptedException, ExecutionException, IOException {
         CompletableFuture<InputStream> file1API = getHttpAsync(api1);
         CompletableFuture<InputStream> file2API = getHttpAsync(api2);
 
         InputStream resp1 = file1API.get();
         InputStream resp2 = file2API.get();
 
-    try
-    {
-        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
 
-        JsonNode jsonNode1 = objectMapper.readTree(resp1);
-        JsonNode jsonNode2 = objectMapper.readTree(resp2);
+            JsonNode jsonNode1 = objectMapper.readTree(resp1);
+            JsonNode jsonNode2 = objectMapper.readTree(resp2);
 
-        if (jsonNode1.equals(jsonNode2))
-        {
-            System.out.println(api1 + "  equals  " + api2);
-        } else
-        {
-            System.out.println(api1 + "  not equals  " + api2);
+            if (jsonNode1.equals(jsonNode2)) {
+                System.out.println(api1 + "  equals  " + api2);
+            } else {
+                System.out.println(api1 + "  not equals  " + api2);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            resp1.close();
+            resp2.close();
         }
-
-    }
-    catch (IOException e)
-    {
-        e.printStackTrace();
-        resp1.close();
-        resp2.close();
-    }
 
 
     }
@@ -82,9 +76,7 @@ public class APIResponseComparator {
             request = HttpRequest.newBuilder().
                     uri(URI.create(uri))
                     .build();
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
 

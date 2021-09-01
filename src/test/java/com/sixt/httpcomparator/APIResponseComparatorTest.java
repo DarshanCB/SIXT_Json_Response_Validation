@@ -14,7 +14,7 @@ public class APIResponseComparatorTest {
         long starttime = System.currentTimeMillis();
         utils.inputResponseComparator("/Applications/Coding Challenge/File1.txt", "/Applications/Coding Challenge/File2.txt");
         long stoptime = System.currentTimeMillis();
-        System.out.println("Time taken for comparison   ::"  + (stoptime-starttime));
+        System.out.println("Time taken for comparison   ::" + (stoptime - starttime));
 
     }
 
