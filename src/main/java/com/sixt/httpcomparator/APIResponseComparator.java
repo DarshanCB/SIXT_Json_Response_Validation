@@ -24,7 +24,7 @@ public class APIResponseComparator {
             buff1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1), StandardCharsets.UTF_8), 1000 * 8816);
             buff2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2), StandardCharsets.UTF_8), 1000 * 8816);
 
-            while ((api1 = buff1.readLine()) !=null && (api2 = buff2.readLine()) !=null){
+            while ((api1 = buff1.readLine()) != null && (api2 = buff2.readLine()) != null) {
                 apiComparator(api1, api2);
             }
 
@@ -43,10 +43,7 @@ public class APIResponseComparator {
         CompletableFuture<InputStream> file1API = getHttpAsync(api1);
         CompletableFuture<InputStream> file2API = getHttpAsync(api2);
 
-        InputStream resp1 = file1API.get();
-        InputStream resp2 = file2API.get();
-
-        try {
+        try (InputStream resp1 = file1API.get(); InputStream resp2 = file2API.get()) {
             ObjectMapper objectMapper = new ObjectMapper();
 
             JsonNode jsonNode1 = objectMapper.readTree(resp1);
@@ -60,9 +57,6 @@ public class APIResponseComparator {
 
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            resp1.close();
-            resp2.close();
         }
 
 
